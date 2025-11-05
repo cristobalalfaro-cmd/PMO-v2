@@ -19,15 +19,20 @@ Static HTML/CSS/JavaScript website with:
    - Total Tareas No Iniciadas / On Hold
    - Porcentaje de Cumplimiento (large indicator, calculated as finalizadas/totales)
    - Option to include/exclude finished tasks from small KPIs
-3. **Status Breakdown**: Accordion view showing:
-   - Finished tasks (all tasks with "Finalizado" status)
-   - Overdue tasks (tasks with deadline before yesterday and not finished)
-   - Tasks due within 21 days
-   - Tasks due in 3+ weeks
-4. **Date Format**: All dates displayed in DD/MM/AAAA (Chilean standard)
-5. **Data Refresh**: Pull latest data from Google Sheets
-6. **Share Links**: Generate filtered URLs with email-based access control
-7. **Password Protection**: Access key "Tomi.2016" required
+3. **Visual Calendar**: 10-day upcoming calendar view showing:
+   - Dates in DD-MMM format (e.g., 04-Nov)
+   - Clients with events each day in colored boxes
+   - Consistent color assignment per client
+4. **Status Breakdown**: Accordion view with 5 mutually exclusive categories:
+   - Finalizados: All tasks with "Finalizado" status
+   - Atrasados: Tasks with deadline before yesterday (not finished)
+   - Próximos vencimientos corto plazo (< 10 días): All tasks with deadline within next 10 days
+   - En plazo: Initiated tasks with deadline > 10 days
+   - Próximos vencimientos largo plazo (> 10 días): Non-initiated tasks with deadline > 10 days
+5. **Date Format**: All dates displayed in DD/MM/AAAA (Chilean standard)
+6. **Data Refresh**: Pull latest data from Google Sheets
+7. **Share Links**: Generate filtered URLs with email-based access control
+8. **Password Protection**: Access key "Tomi.2016" required
 
 ## Architecture
 ```
@@ -69,6 +74,17 @@ The application is configured via `data/config.js`:
    - Access granted if email exists in the Email column for that Client/Project
 
 ## Recent Changes
+- **2025-11-05**: Enhanced status breakdown and added visual calendar
+  - **New Calendar Visual Section**: Added 10-day calendar view between Executive Summary and Status Breakdown
+    - Displays upcoming 10 days with dates in DD-MMM format (e.g., 04-Nov)
+    - Shows clients with events each day in colored boxes
+    - Each client assigned a unique, consistent color across the dashboard
+  - **Expanded Status Breakdown Categories**: Reorganized into 5 mutually exclusive categories:
+    - Finalizados: Tasks with "Finalizado" status
+    - Atrasados: Tasks with deadline before yesterday (not finished)
+    - Próximos vencimientos corto plazo (< 10 días): ALL tasks (initiated or not) with deadline within next 10 days
+    - En plazo: Initiated tasks with deadline > 10 days
+    - Próximos vencimientos largo plazo (> 10 días): Non-initiated tasks with deadline > 10 days
 - **2025-11-05**: Removed all editing functionality - dashboard is now read-only
   - Removed "Editar tareas" button and all edit mode controls
   - Removed edit functionality from app.js (EDIT_MODE, bindEditTasks, trackChange, save/discard functions)

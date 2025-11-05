@@ -212,6 +212,7 @@ function applyFiltersAndRender() {
   });
 
   renderResumenEjecutivo();
+  renderCalendarioVisual();
   renderAperturaPorEstatus();
   renderPie();
 }
@@ -258,6 +259,103 @@ function bindShare(){
   });
 }
 
+/* ---------- CALENDARIO VISUAL ---------- */
+
+function generateClientColor(clientName, allClients) {
+  const colors = [
+    '#f38ba8', '#fab387', '#f9e2af', '#a6e3a1', '#94e2d5',
+    '#89dceb', '#74c7ec', '#89b4fa', '#cba6f7', '#f5c2e7',
+    '#eba0ac', '#f5a97f', '#ffe066', '#81c995', '#7fd4c1'
+  ];
+  const index = allClients.indexOf(clientName);
+  return colors[index % colors.length];
+}
+
+function renderCalendarioVisual() {
+  const container = document.querySelector("#calendario-visual");
+  if (!container) return;
+  
+  container.innerHTML = "";
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Generar los próximos 10 días
+  const days = [];
+  for (let i = 0; i < 10; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+  
+  // Agrupar tareas por fecha y cliente
+  const tasksByDate = {};
+  const allClients = [...new Set(FILTERED.map(r => r.Cliente).filter(Boolean))].sort();
+  
+  for (const day of days) {
+    const dateKey = day.toISOString().split('T')[0];
+    tasksByDate[dateKey] = [];
+    
+    for (const r of FILTERED) {
+      const deadline = parseDate(r.Deadline);
+      if (!deadline) continue;
+      
+      const taskDateKey = deadline.toISOString().split('T')[0];
+      if (taskDateKey === dateKey && r.Cliente) {
+        if (!tasksByDate[dateKey].includes(r.Cliente)) {
+          tasksByDate[dateKey].push(r.Cliente);
+        }
+      }
+    }
+  }
+  
+  // Renderizar el calendario
+  const calendarDiv = document.createElement("div");
+  calendarDiv.className = "calendar-grid";
+  
+  for (const day of days) {
+    const dateKey = day.toISOString().split('T')[0];
+    const clients = tasksByDate[dateKey] || [];
+    
+    const dayCol = document.createElement("div");
+    dayCol.className = "calendar-day";
+    
+    // Fecha arriba
+    const dateHeader = document.createElement("div");
+    dateHeader.className = "calendar-date";
+    const dayNum = String(day.getDate()).padStart(2, '0');
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const monthName = monthNames[day.getMonth()];
+    dateHeader.textContent = `${dayNum}-${monthName}`;
+    dayCol.appendChild(dateHeader);
+    
+    // Clientes abajo
+    const clientsContainer = document.createElement("div");
+    clientsContainer.className = "calendar-clients";
+    
+    if (clients.length === 0) {
+      const emptyBox = document.createElement("div");
+      emptyBox.className = "calendar-client-box empty";
+      emptyBox.textContent = "-";
+      clientsContainer.appendChild(emptyBox);
+    } else {
+      for (const cliente of clients) {
+        const clientBox = document.createElement("div");
+        clientBox.className = "calendar-client-box";
+        clientBox.style.backgroundColor = generateClientColor(cliente, allClients);
+        clientBox.textContent = cliente;
+        clientBox.title = cliente;
+        clientsContainer.appendChild(clientBox);
+      }
+    }
+    
+    dayCol.appendChild(clientsContainer);
+    calendarDiv.appendChild(dayCol);
+  }
+  
+  container.appendChild(calendarDiv);
+}
+
 /* ---------- APERTURA POR ESTATUS (accordion) ---------- */
 
 function renderAperturaPorEstatus() {
@@ -266,16 +364,19 @@ function renderAperturaPorEstatus() {
 
   const today = new Date(); today.setHours(0,0,0,0);
   const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-  const in21 = new Date(today); in21.setDate(in21.getDate() + 21);
+  const in10 = new Date(today); in10.setDate(in10.getDate() + 10);
 
   const finalizados = [];
   const atrasados = [];
-  const proximos = [];
-  const futuros = [];
+  const enPlazo = [];
+  const proximosCortoPlazo = [];
+  const proximosLargoPlazo = [];
 
   for (const r of FILTERED) {
     const estatus = (r.Estatus || "").toLowerCase().trim();
     const esFinalizado = estatus === "finalizado";
+    const esIniciado = estatus === "iniciado";
+    const esNoIniciado = estatus === "no iniciado";
     
     if (esFinalizado) {
       finalizados.push(r);
@@ -287,18 +388,21 @@ function renderAperturaPorEstatus() {
     
     if (d <= yesterday) {
       atrasados.push(r);
-    } else if (d >= today && d <= in21) {
-      proximos.push(r);
-    } else if (d > in21) {
-      futuros.push(r);
+    } else if (d >= today && d <= in10) {
+      proximosCortoPlazo.push(r);
+    } else if (d > in10 && esIniciado) {
+      enPlazo.push(r);
+    } else if (d > in10) {
+      proximosLargoPlazo.push(r);
     }
   }
 
   const groups = [
     {title: "Finalizados", data: finalizados},
     {title: "Atrasados", data: atrasados},
-    {title: "Próximos vencimientos (≤ 21 días)", data: proximos},
-    {title: "Actividades programadas para más de 3 semanas", data: futuros}
+    {title: "En plazo", data: enPlazo},
+    {title: "Próximos vencimientos corto plazo (< 10 días)", data: proximosCortoPlazo},
+    {title: "Próximos vencimientos largo plazo (> 10 días)", data: proximosLargoPlazo}
   ];
 
   for (const g of groups) {
