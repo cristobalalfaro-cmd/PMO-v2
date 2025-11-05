@@ -1,7 +1,7 @@
 # Dashboard · Gestión de Proyectos
 
 ## Overview
-This is a Project Management Dashboard (in Spanish) that provides a comprehensive view of project tasks, deadlines, and status tracking. The application connects to Google Sheets for data and provides interactive filtering, status editing, and reporting capabilities.
+This is a read-only Project Management Dashboard (in Spanish) that provides a comprehensive view of project tasks, deadlines, and status tracking. The application connects to Google Sheets for data via CSV export and provides interactive filtering, status breakdown, and executive summary with compliance metrics.
 
 ## Project Type
 Static HTML/CSS/JavaScript website with:
@@ -12,13 +12,19 @@ Static HTML/CSS/JavaScript website with:
 
 ## Key Features
 1. **Cascading Filters**: Type, Client, Project, Status, Owner - filters update dynamically based on previous selections
-2. **Executive Summary**: KPI dashboard with option to include/exclude finished tasks
+2. **Executive Summary**: KPI dashboard with 5 indicators:
+   - Total Tareas
+   - Total Tareas Finalizadas
+   - Total Tareas Iniciadas
+   - Total Tareas No Iniciadas / On Hold
+   - Porcentaje de Cumplimiento (large indicator, calculated as finalizadas/totales)
+   - Option to include/exclude finished tasks from small KPIs
 3. **Status Breakdown**: Accordion view showing:
    - Finished tasks (all tasks with "Finalizado" status)
    - Overdue tasks (tasks with deadline before yesterday and not finished)
    - Tasks due within 21 days
    - Tasks due in 3+ weeks
-4. **Status Editing**: Edit task status directly in the dashboard with save/discard functionality
+4. **Date Format**: All dates displayed in DD/MM/AAAA (Chilean standard)
 5. **Data Refresh**: Pull latest data from Google Sheets
 6. **Share Links**: Generate filtered URLs with email-based access control
 7. **Password Protection**: Access key "Tomi.2016" required
@@ -63,22 +69,20 @@ The application is configured via `data/config.js`:
    - Access granted if email exists in the Email column for that Client/Project
 
 ## Recent Changes
-- **2025-11-03**: Full editing mode for tasks
-  - Added "Editar tareas" button to toggle between view and edit modes
-  - Enabled editing of all task fields: Tareas, Owner, Deadline, and Estatus
-  - Tareas and Owner use text inputs
-  - Deadline uses date picker (calendar)
-  - Estatus uses dropdown with 4 predefined options
-  - Smart change tracking: only sends modified fields to Google Sheets
-  - Auto-cleanup: reverted fields are automatically removed from pending changes
-  - Edit mode shows/hides Guardar and Descartar buttons dynamically
+- **2025-11-05**: Removed all editing functionality - dashboard is now read-only
+  - Removed "Editar tareas" button and all edit mode controls
+  - Removed edit functionality from app.js (EDIT_MODE, bindEditTasks, trackChange, save/discard functions)
+  - Simplified renderAperturaPorEstatus to display read-only tables only
+  - Implemented Chilean date format (DD/MM/AAAA) using formatDateCL function in utils.js
+  - Redesigned Executive Summary with 5 KPIs in new layout:
+    - 4 small KPIs: Total Tareas, Total Finalizadas, Total Iniciadas, Total No Iniciadas/On Hold
+    - 1 large KPI: Porcentaje de Cumplimiento (double size, spans 2 rows)
+  - Fixed percentage calculation: always computes finalizadas/totales from full filtered dataset
+  - Updated CSS grid layout: 4 small KPIs in 2 columns, 1 large KPI in column 3 spanning 2 rows
 - **2025-11-03**: Enhanced features
   - Implemented cascading filters (filters update dynamically based on selections)
   - Added "Finalizados" category in Status Breakdown section
   - Modified "Atrasados" to only show tasks with deadline before yesterday (not finished)
-  - Added "Descartar cambios" (Discard changes) button next to "Guardar cambios"
-  - Improved save functionality to refresh data and rebuild filters after saving
-  - Added discard functionality to revert unsaved status changes
 - **2025-11-03**: Initial Replit setup
   - Created Python HTTP server (server.py) to serve static files
   - Configured workflow to run on port 5000
