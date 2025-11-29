@@ -6,6 +6,33 @@ function uniqueSorted(arr) {
 }
 function parseDate(str) {
   if (!str) return null;
+  
+  const monthsES = {
+    'ene': 0, 'enero': 0,
+    'feb': 1, 'febrero': 1,
+    'mar': 2, 'marzo': 2,
+    'abr': 3, 'abril': 3,
+    'may': 4, 'mayo': 4,
+    'jun': 5, 'junio': 5,
+    'jul': 6, 'julio': 6,
+    'ago': 7, 'agosto': 7,
+    'sep': 8, 'sept': 8, 'septiembre': 8,
+    'oct': 9, 'octubre': 9,
+    'nov': 10, 'noviembre': 10,
+    'dic': 11, 'diciembre': 11
+  };
+  
+  const match = str.match(/^(\d{1,2})-([a-zA-Z]+)-(\d{4})$/);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const monthStr = match[2].toLowerCase();
+    const year = parseInt(match[3], 10);
+    const month = monthsES[monthStr];
+    if (month !== undefined) {
+      return new Date(year, month, day);
+    }
+  }
+  
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }

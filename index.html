@@ -60,6 +60,33 @@
       <div id="resumen-ejecutivo" class="kpi-grid"></div>
     </section>
 
+    <!-- Indicadores Gauge -->
+    <section class="panel">
+      <h2>Indicadores de Gestión</h2>
+      <div class="gauge-container">
+        <div class="gauge-item">
+          <canvas id="gauge-riesgo"></canvas>
+          <div class="gauge-label">Riesgo Proyectos</div>
+        </div>
+        <div class="gauge-item">
+          <canvas id="gauge-productividad"></canvas>
+          <div class="gauge-label">Riesgo Productividad</div>
+        </div>
+        <div class="gauge-item">
+          <canvas id="gauge-capacidad"></canvas>
+          <div class="gauge-label">Riesgo Capacidad</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <p style="margin:0 0 6px;color:#9fb6ff">Indicaciones</p>
+        <ul style="margin:0 0 0 18px; padding:0; line-height:1.6">
+          <li><b>Riesgo Proyectos</b>: Proporción de tareas atrasadas vs tareas en plazo/próximos vencimientos.</li>
+          <li><b>Riesgo Productividad</b>: Porcentaje de tareas no iniciadas sobre el total de tareas pendientes (sin contar finalizadas ni on hold).</li>
+          <li><b>Riesgo Capacidad</b>: Eventos con vencimiento en próximos 10 días expresado en % (8 eventos = 40%, 20 eventos = 100%).</li>
+        </ul>
+      </div>
+    </section>
+
     <!-- Calendario visual -->
     <section class="panel">
       <h2>Vista de calendario · Próximos 10 días</h2>
@@ -72,24 +99,7 @@
       <div id="apertura-estatus"></div>
     </section>
 
-    <!-- Reporte -->
-    <section class="panel">
-      <h2>Reporte</h2>
-      <div class="report-grid">
-        <div class="card">
-          <canvas id="chart-estatus" height="220"></canvas>
-        </div>
-        <div class="card">
-          <p style="margin:0 0 6px;color:#9fb6ff">Indicaciones</p>
-          <ul style="margin:0 0 0 18px; padding:0; line-height:1.6">
-            <li>Distribución de <b>Estatus</b> con filtros aplicados (porcentaje en la torta).</li>
-            <li>Apertura: <i>Atrasados</i>, <i>Próximos vencimientos (≤ 21 días)</i> y <i>+3 semanas</i>.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <div class="footer">Hecho con ❤️ · Chart.js · PapaParse</div>
+    <div class="footer">Desarrollado por Cristóbal Alfaro</div>
   </div>
 
   <!-- Modal de acceso -->

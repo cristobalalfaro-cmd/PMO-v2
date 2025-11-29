@@ -1,6 +1,6 @@
 let RAW = [];
 let FILTERED = [];
-let PIE_CHART = null;
+let GAUGE_CHARTS = { riesgo: null, productividad: null, capacidad: null };
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -212,9 +212,9 @@ function applyFiltersAndRender() {
   });
 
   renderResumenEjecutivo();
+  renderGauges();
   renderCalendarioVisual();
   renderAperturaPorEstatus();
-  renderPie();
 }
 
 function bindReset() {
@@ -364,22 +364,28 @@ function renderAperturaPorEstatus() {
 
   const today = new Date(); today.setHours(0,0,0,0);
   const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-  const in10 = new Date(today); in10.setDate(in10.getDate() + 10);
+  const in5 = new Date(today); in5.setDate(in5.getDate() + 5);
+  const in15 = new Date(today); in15.setDate(in15.getDate() + 15);
 
   const finalizados = [];
+  const onHold = [];
   const atrasados = [];
-  const enPlazo = [];
   const proximosCortoPlazo = [];
+  const proximosMedianoPlazo = [];
   const proximosLargoPlazo = [];
 
   for (const r of FILTERED) {
     const estatus = (r.Estatus || "").toLowerCase().trim();
     const esFinalizado = estatus === "finalizado";
-    const esIniciado = estatus === "iniciado";
-    const esNoIniciado = estatus === "no iniciado";
+    const esOnHold = estatus === "on hold";
     
     if (esFinalizado) {
       finalizados.push(r);
+      continue;
+    }
+    
+    if (esOnHold) {
+      onHold.push(r);
       continue;
     }
     
@@ -388,21 +394,22 @@ function renderAperturaPorEstatus() {
     
     if (d <= yesterday) {
       atrasados.push(r);
-    } else if (d >= today && d <= in10) {
+    } else if (d >= today && d < in5) {
       proximosCortoPlazo.push(r);
-    } else if (d > in10 && esIniciado) {
-      enPlazo.push(r);
-    } else if (d > in10) {
+    } else if (d >= in5 && d <= in15) {
+      proximosMedianoPlazo.push(r);
+    } else if (d > in15) {
       proximosLargoPlazo.push(r);
     }
   }
 
   const groups = [
-    {title: "Finalizados", data: finalizados},
     {title: "Atrasados", data: atrasados},
-    {title: "En plazo", data: enPlazo},
-    {title: "Próximos vencimientos corto plazo (< 10 días)", data: proximosCortoPlazo},
-    {title: "Próximos vencimientos largo plazo (> 10 días)", data: proximosLargoPlazo}
+    {title: "Próximos vencimientos corto plazo (< 5 días)", data: proximosCortoPlazo},
+    {title: "Próximos vencimientos mediano plazo (5 a 15 días)", data: proximosMedianoPlazo},
+    {title: "Próximos vencimientos largo plazo (> 15 días)", data: proximosLargoPlazo},
+    {title: "Finalizados", data: finalizados},
+    {title: "On Hold", data: onHold}
   ];
 
   for (const g of groups) {
@@ -416,7 +423,6 @@ function renderAperturaPorEstatus() {
 
     const acc = document.createElement("details");
     acc.className = "accordion";
-    if (g.title.startsWith("Atrasados") && list.length > 0) acc.open = true;
 
     const sum = document.createElement("summary");
     sum.textContent = `${g.title} · ${list.length}`;
@@ -561,44 +567,123 @@ function renderResumenEjecutivo() {
   `;
 }
 
-/* ---------- REPORTE ---------- */
+/* ---------- INDICADORES GAUGE ---------- */
 
-function renderPie() {
-  if (window.Chart && window.ChartDataLabels) { Chart.register(ChartDataLabels); }
-  const ctx = document.querySelector("#chart-estatus").getContext("2d");
-  const counts = {};
+function computeGaugeMetrics() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  const in10Days = new Date(today); in10Days.setDate(in10Days.getDate() + 10);
+  
+  let noIniciadas = 0;
+  let atrasados = 0;
+  let enPlazoYProximos = 0;
+  let eventosProximos10Dias = 0;
+  let totalPendientes = 0;
+
   for (const r of FILTERED) {
-    const k = r.Estatus || "Sin estatus";
-    counts[k] = (counts[k] || 0) + 1;
+    const estatus = (r.Estatus || "").toLowerCase().trim();
+    
+    if (estatus === "finalizado" || estatus === "on hold") {
+      continue;
+    }
+    
+    totalPendientes++;
+    
+    if (estatus === "no iniciado" || estatus === "") {
+      noIniciadas++;
+    }
+    
+    const d = parseDate(r.Deadline);
+    if (!d) continue;
+    
+    if (d <= yesterday) {
+      atrasados++;
+    } else {
+      enPlazoYProximos++;
+      if (d <= in10Days) {
+        eventosProximos10Dias++;
+      }
+    }
   }
-  const labels = Object.keys(counts);
-  const data = Object.values(counts);
 
-  if (PIE_CHART) PIE_CHART.destroy();
-  PIE_CHART = new Chart(ctx, {
-    type: "pie",
+  const totalRiesgo = atrasados + enPlazoYProximos;
+  const riesgo = totalRiesgo > 0 ? atrasados / totalRiesgo : 0;
+  const riesgoProductividad = totalPendientes > 0 ? noIniciadas / totalPendientes : 0;
+
+  return { riesgo, riesgoProductividad, eventosProximos10Dias };
+}
+
+function createGaugeChart(canvasId, value, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  
+  const ctx = canvas.getContext("2d");
+  const displayPercent = Math.round(value * 100);
+  const displayValue = displayPercent + '%';
+  const percentage = Math.min(Math.max(displayPercent, 0), 100);
+  const remaining = 100 - percentage;
+
+  const config = {
+    type: 'doughnut',
     data: {
-      labels,
       datasets: [{
-        data,
-        backgroundColor: ["#00D1FF","#FF4D4D","#FFC300","#2ECC71","#9B59B6","#FF7F00","#1abc9c","#e67e22"]
+        data: [percentage, remaining],
+        backgroundColor: [color, '#1e3a5f'],
+        borderWidth: 0
       }]
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      circumference: 180,
+      rotation: -90,
+      cutout: '70%',
       plugins: {
-        legend: { position: "right", labels: { color: "#E6E8EB" } },
-        tooltip: { enabled: true },
-        datalabels: {
-          formatter: (value, ctx) => {
-            const arr = ctx.chart.data.datasets[0].data;
-            const sum = arr.reduce((a,b)=>a+b, 0) || 1;
-            const pct = (value / sum) * 100;
-            return pct.toFixed(0) + "%";
-          },
-          color: "#ffffff",
-          font: { weight: "bold" }
-        }
+        legend: { display: false },
+        tooltip: { enabled: false }
       }
-    }
-  });
+    },
+    plugins: [{
+      id: 'gaugeText',
+      afterDraw: (chart) => {
+        const { ctx, chartArea } = chart;
+        const centerX = (chartArea.left + chartArea.right) / 2;
+        const centerY = chartArea.bottom - 10;
+        
+        ctx.save();
+        ctx.font = 'bold 24px Inter, system-ui, sans-serif';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(displayValue, centerX, centerY);
+        ctx.restore();
+      }
+    }]
+  };
+
+  return new Chart(ctx, config);
+}
+
+function getThirdColor(value) {
+  if (value >= 0.66) return '#ef4444';
+  if (value >= 0.33) return '#f59e0b';
+  return '#22c55e';
+}
+
+function renderGauges() {
+  const metrics = computeGaugeMetrics();
+
+  if (GAUGE_CHARTS.riesgo) GAUGE_CHARTS.riesgo.destroy();
+  if (GAUGE_CHARTS.productividad) GAUGE_CHARTS.productividad.destroy();
+  if (GAUGE_CHARTS.capacidad) GAUGE_CHARTS.capacidad.destroy();
+
+  const riesgoColor = getThirdColor(metrics.riesgo);
+  const productividadColor = getThirdColor(metrics.riesgoProductividad);
+  
+  const riesgoCapacidad = metrics.eventosProximos10Dias / 20;
+  const capacidadColor = getThirdColor(Math.min(riesgoCapacidad, 1));
+
+  GAUGE_CHARTS.riesgo = createGaugeChart('gauge-riesgo', metrics.riesgo, riesgoColor);
+  GAUGE_CHARTS.productividad = createGaugeChart('gauge-productividad', metrics.riesgoProductividad, productividadColor);
+  GAUGE_CHARTS.capacidad = createGaugeChart('gauge-capacidad', riesgoCapacidad, capacidadColor);
 }

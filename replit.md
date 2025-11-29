@@ -74,6 +74,32 @@ The application is configured via `data/config.js`:
    - Access granted if email exists in the Email column for that Client/Project
 
 ## Recent Changes
+- **2025-11-28**: Updated gauge indicators and removed Reporte section
+  - Renamed and updated gauge metrics:
+    - Riesgo Proyectos: Proportion of overdue tasks vs on-track tasks (unchanged)
+    - Riesgo Productividad: Percentage of non-initiated tasks over total pending (excludes finalized and on hold)
+    - Riesgo Capacidad: Events with deadline in next 10 days as % (8 events = 40%, 20 events = 100%)
+  - All gauges use thirds for colors: 0-33% green, 33-66% yellow, 66-100%+ red
+  - Moved instructions inside "Indicadores de Gestión" section
+  - Removed "Reporte" section completely
+- **2025-11-28**: Replaced pie chart with 3 gauge indicators and reorganized status categories
+  - Added new "Indicadores de Gestión" section with 3 gauge charts
+  - Reorganized "Apertura por estatus" with new order and thresholds:
+    - Atrasados, Corto plazo (<5 días), Mediano plazo (5-15 días), Largo plazo (>15 días), Finalizados, On Hold
+  - Removed pie chart from Reporte section
+- **2025-11-27**: Added "On Hold" category and fixed accordion behavior
+  - Created new "On Hold" category in Status Breakdown section (between Finalizados and Atrasados)
+  - "Atrasados" no longer includes tasks with status "On Hold"
+  - All accordion categories now start closed when dashboard loads
+- **2025-11-27**: Fixed Spanish date parsing for calendar
+  - Updated parseDate function in utils.js to handle Spanish month abbreviations (ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic)
+  - Dates like "1-dic-2025" from Google Sheets now parse correctly
+  - Calendar now shows clients with deadlines in the next 10 days properly
+- **2025-11-27**: GitHub import setup on Replit
+  - Installed Python 3.11 module for server runtime
+  - Configured "Dashboard Server" workflow to run on port 5000 with webview output
+  - Configured deployment settings (VM deployment with python3 server.py)
+  - Verified dashboard loads correctly with password protection working
 - **2025-11-05**: Enhanced status breakdown and added visual calendar
   - **New Calendar Visual Section**: Added 10-day calendar view between Executive Summary and Status Breakdown
     - Displays upcoming 10 days with dates in DD-MMM format (e.g., 04-Nov)
@@ -109,8 +135,10 @@ The application is configured via `data/config.js`:
 - Cache-Control headers added to ensure updates are visible
 - No backend processing - all logic runs client-side
 - External dependencies loaded via CDN
+- Deployment configured as VM with `python3 server.py` command
 
 ## Development
 - Run: `python3 server.py`
 - The server serves all files from the root directory
 - No build process required
+- Python 3.11 module installed for runtime
